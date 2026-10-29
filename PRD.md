@@ -100,7 +100,7 @@ Steps to make this safe and pleasant to actually copy drives with.
 | 5.5 | Structured logging to a log file per operation | ✅ | `logger.rs`; per-op timestamped log with every command + summary |
 | 5.6 | Cancellation hardening (SIGTERM whole pipeline, cleanup partials) | ✅ | kills whole pipe; backup removes partial image files; cancel surfaced as warning |
 | 5.7 | Error surfacing: non-fatal partclone errors → summary warnings | ✅ | rescue-mode failures downgraded to warnings; `CloneSummary.warnings` shown in UI |
-| 5.8 | AppImage/.deb packaging for Linux | 🧪 | bundle config set (deb/appimage/rpm + runtime depends); `docs/PACKAGING.md`; needs a Linux host to produce artifacts |
+| 5.8 | AppImage/.deb packaging for Linux | ✅ | `.github/workflows/release.yml` builds deb/rpm/AppImage on CI via tauri-action; `docs/PACKAGING.md` + `docs/CI.md` |
 | 5.9 | Bootable-USB / live-environment story (optional) | ⏳ | run from a live distro |
 | 5.10 | Real icons + app metadata (currently placeholder) | ✅ | `icons/rabobi.svg` source → PNGs + `.icns` + `.ico`; three-arrow "pointing" mark; used in bundle, favicon, and Home header |
 | 5.11 | End-to-end smoke test on real hardware with a throwaway disk | 🧪 | gate before first real use |
@@ -122,8 +122,20 @@ Windows has no partclone/lsblk, so RescueClone uses native facilities: PowerShel
 | 6.5 | Post-op verification on Windows | ✅ | `verify.rs` is cross-platform (raw device hashing) |
 | 6.6 | Windows backup/restore (image to/from folder) | ✅ | `windows.rs` raw full-disk image (`flate2` gzip) + split parts + scanner; UI hides zstd / notes full-disk on Windows |
 | 6.7 | Cross-compile validation of Windows code | ✅ | `cargo check --target x86_64-pc-windows-gnu` clean for our modules (tauri's own macOS-plist macro blocks full cross-build from macOS; builds on a Windows host) |
-| 6.8 | Windows `.msi`/`.exe` packaging | 🧪 | `tauri build` on a Windows host; config targets "all" by default there |
+| 6.8 | Windows `.msi`/`.exe` packaging | ✅ | `.github/workflows/release.yml` builds msi/exe on `windows-latest` via tauri-action |
 | 6.9 | Real-hardware Windows smoke test | 🧪 | gate before first real use on Windows |
+
+---
+
+## Milestone 7 — CI / release automation
+
+| # | Step | Status | Notes |
+| --- | --- | --- | --- |
+| 7.1 | CI: frontend typecheck + build on push/PR | ✅ | `.github/workflows/ci.yml` |
+| 7.2 | CI: Rust test + clippy (`-D warnings`) on Linux/Win/macOS | ✅ | runs with `RABOBI_SKIP_TAURI_BUILD=1` |
+| 7.3 | Release: build deb/rpm/AppImage/msi/exe/dmg across a matrix | ✅ | `.github/workflows/release.yml` + tauri-action |
+| 7.4 | Release: attach installers to a draft GitHub Release on tags | ✅ | `v*` tag → draft release; manual run → artifacts |
+| 7.5 | Code signing (macOS notarization, Windows cert) | ⏳ | needs paid certs + org secrets; documented in `docs/CI.md` |
 
 ---
 
