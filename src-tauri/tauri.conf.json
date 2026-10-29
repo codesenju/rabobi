@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Rabobi",
+  "version": "0.1.0",
+  "identifier": "com.rabobi.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Rabobi — Disk Clone",
+        "width": 1040,
+        "height": 720,
+        "minWidth": 900,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage", "rpm"],
+    "category": "Utility",
+    "shortDescription": "Clone, back up, and restore disks",
+    "longDescription": "Rabobi is a Clonezilla-compatible disk cloning, imaging, and restore tool with a modern graphical interface. It copies drives device-to-device, saves compressed disk images, and restores them, using partclone under the hood.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": {
+        "depends": [
+          "util-linux",
+          "gdisk",
+          "partclone",
+          "pigz",
+          "zstd",
+          "bzip2",
+          "coreutils"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "util-linux",
+          "gdisk",
+          "partclone",
+          "pigz",
+          "zstd",
+          "bzip2",
+          "coreutils"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+[package]
+name = "rescueclone-desktop"
+version = "0.1.0"
+description = "Cross-platform disk-clone desktop app (Rescuezilla clone feature, beUI interface)"
+authors = ["you"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "rescueclone_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "rabobi"
+path = "src/bin/cli.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+sha2 = "0.10"
+
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
+# In-process gzip for the raw image path (no pigz/zstd on Windows/macOS).
+flate2 = "1"
+
+[features]
+# default features intentionally empty
+default = []

@@ -1,0 +1,109 @@
+name: Build installers
+
+# Produces native Rabobi bundles on real runners:
+#   Linux   → .deb, .rpm, AppImage
+#   Windows → .msi, .exe (NSIS)
+#   macOS   → .dmg, .app  (both Apple Silicon and Intel)
+#
+# Triggers:
+#   - push a tag like v0.1.0  → builds + attaches to a draft GitHub Release
+#   - manual "Run workflow"   → builds + uploads artifacts only (no release)
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to create/attach the draft release on tag builds
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS (Apple Silicon)
+            os: macos-latest
+            rust-target: aarch64-apple-darwin
+            tauri-args: "--target aarch64-apple-darwin"
+          - label: macOS (Intel)
+            os: macos-latest
+            rust-target: x86_64-apple-darwin
+            tauri-args: "--target x86_64-apple-darwin"
+          - label: Linux (x86_64)
+            os: ubuntu-latest
+            rust-target: x86_64-unknown-linux-gnu
+            tauri-args: ""
+          - label: Windows (x86_64)
+            os: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            tauri-args: ""
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system deps (Tauri)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libssl-dev build-essential file rpm
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.rust-target }}
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build app + bundles
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # On a tag build, create/populate a draft release. On manual runs
+          # these are empty and tauri-action just builds (artifacts uploaded
+          # by the step below).
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('Rabobi {0}', github.ref_name) || '' }}
+          releaseBody: "Rabobi desktop builds. See the assets below for your platform."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.tauri-args }}
+
+      - name: Collect bundles
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p dist-bundles
+          # tauri writes bundles under src-tauri/target[/<triple>]/release/bundle/**
+          find src-tauri/target -type d -name bundle 2>/dev/null | while read -r d; do
+            find "$d" -type f \
+              \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' \
+                 -o -name '*.msi' -o -name '*.exe' \
+                 -o -name '*.dmg' -o -name '*.app' \) \
+              -exec cp -r {} dist-bundles/ \; 2>/dev/null || true
+          done
+          ls -la dist-bundles || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rabobi-${{ matrix.rust-target }}
+          path: dist-bundles/**
+          if-no-files-found: warn
+          retention-days: 14
